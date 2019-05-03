@@ -3,6 +3,8 @@ package ca.uhn.fhir.jpa.subscription.module.standalone;
 import ca.uhn.fhir.rest.api.Constants;
 import ca.uhn.fhir.rest.api.server.IBundleProvider;
 import ca.uhn.fhir.rest.server.SimpleBundleProvider;
+import org.hl7.fhir.dstu3.model.Coding;
+import org.hl7.fhir.dstu3.model.Observation;
 import org.hl7.fhir.dstu3.model.Subscription;
 import org.junit.Test;
 
@@ -51,5 +53,25 @@ public class SubscriptionLoaderFhirClientTest extends BaseBlockingQueueSubscriba
 
 		waitForSize(0, ourCreatedObservations);
 		waitForSize(0, ourUpdatedObservations);
+	}
+
+	@Test
+	public void testDaoMatcherFallback() throws InterruptedException {
+		String payload = "application/fhir+json";
+		String criteria = "Observation?_tag=foo";
+
+		List<Subscription> subs = new ArrayList<>();
+		subs.add(makeActiveSubscription(criteria, payload, ourListenerServerBase));
+
+		IBundleProvider bundle = new SimpleBundleProvider(new ArrayList<>(subs), "uuid");
+		initSubscriptionLoader(bundle);
+
+		Observation observation = buildObservation(myCode, myCode);
+		observation.getMeta().getTag().add(new Coding().setSystem("scheme").setCode("foo"));
+		sendResource(observation);
+
+		waitForSize(0, ourCreatedObservations);
+		waitForSize(1, ourUpdatedObservations);
+		assertEquals(Constants.CT_FHIR_JSON_NEW, ourContentTypes.get(0));
 	}
 }

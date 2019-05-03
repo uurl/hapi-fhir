@@ -109,6 +109,10 @@ public abstract class BaseBlockingQueueSubscribableChannelDstu3Test extends Base
 	}
 
 	protected Observation sendObservation(String code, String system) throws InterruptedException {
+		return sendResource(buildObservation(code, system));
+	}
+
+	protected Observation buildObservation(String code, String system) {
 		Observation observation = new Observation();
 		IdType id = new IdType("Observation", nextId());
 		observation.setId(id);
@@ -120,8 +124,7 @@ public abstract class BaseBlockingQueueSubscribableChannelDstu3Test extends Base
 		coding.setSystem(system);
 
 		observation.setStatus(Observation.ObservationStatus.FINAL);
-
-		return sendResource(observation);
+		return observation;
 	}
 
 	@BeforeClass

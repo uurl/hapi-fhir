@@ -8,6 +8,7 @@ import ca.uhn.fhir.rest.api.Constants;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.server.exceptions.UnprocessableEntityException;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.*;
 import org.junit.After;
 import org.junit.Assert;
@@ -755,6 +756,28 @@ public class RestHookTestR4Test extends BaseSubscriptionsR4Test {
 		waitForActivatedSubscriptionCount(2);
 
 		Observation observation1 = sendObservation(code, "SNOMED-CT");
+
+		// Should see 1 subscription notification
+		waitForQueueToDrain();
+		waitForSize(0, ourCreatedObservations);
+		waitForSize(1, ourUpdatedObservations);
+		assertEquals(Constants.CT_FHIR_XML_NEW, ourContentTypes.get(0));
+	}
+
+
+	@Test
+	public void testRestHookSubscriptionDaoMatcher() throws Exception {
+		String payload = "application/fhir+xml";
+		String code = "unused";
+		String criteria = "Observation?_tag=foo";
+
+		Subscription subscription = createSubscription(criteria, payload);
+		waitForActivatedSubscriptionCount(1);
+
+		Observation observation = buildObservation(code, "SNOMED-CT");
+		observation.getMeta().getTag().add(new Coding().setSystem("scheme").setCode("foo"));
+		IIdType id = myObservationDao.create(observation).getId();
+		observation.setId(id);
 
 		// Should see 1 subscription notification
 		waitForQueueToDrain();

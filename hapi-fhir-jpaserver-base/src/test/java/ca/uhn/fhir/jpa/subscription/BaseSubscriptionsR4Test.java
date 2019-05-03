@@ -22,6 +22,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -143,6 +144,16 @@ public abstract class BaseSubscriptionsR4Test extends BaseResourceProviderR4Test
 
 
 	protected Observation sendObservation(String code, String system) {
+		Observation observation = buildObservation(code, system);
+
+		IIdType id = myObservationDao.create(observation).getId();
+		observation.setId(id);
+
+		return observation;
+	}
+
+	@NotNull
+	protected Observation buildObservation(String code, String system) {
 		Observation observation = new Observation();
 		CodeableConcept codeableConcept = new CodeableConcept();
 		observation.setCode(codeableConcept);
@@ -152,13 +163,8 @@ public abstract class BaseSubscriptionsR4Test extends BaseResourceProviderR4Test
 		coding.setSystem(system);
 
 		observation.setStatus(Observation.ObservationStatus.FINAL);
-
-		IIdType id = myObservationDao.create(observation).getId();
-		observation.setId(id);
-
 		return observation;
 	}
-
 
 
 	public static class ObservationListener implements IResourceProvider {
