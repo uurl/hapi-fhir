@@ -189,7 +189,7 @@ public class PortUtil {
 	 * This method checks if we are able to bind a given port to both
 	 * 0.0.0.0 and localhost in order to be sure it's truly available.
 	 */
-	private static boolean isAvailable(int thePort) {
+	public static boolean isAvailable(int thePort) {
 		ourLog.info("Testing a bind on thePort {}", thePort);
 		try (ServerSocket ss = new ServerSocket()) {
 			ss.setReuseAddress(true);

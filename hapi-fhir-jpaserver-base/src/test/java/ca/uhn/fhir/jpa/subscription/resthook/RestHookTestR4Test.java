@@ -764,7 +764,6 @@ public class RestHookTestR4Test extends BaseSubscriptionsR4Test {
 		assertEquals(Constants.CT_FHIR_XML_NEW, ourContentTypes.get(0));
 	}
 
-
 	@Test
 	public void testRestHookSubscriptionDaoMatcher() throws Exception {
 		String payload = "application/fhir+xml";

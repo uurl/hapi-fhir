@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 // This class is primarily used for testing.
 public class PointcutLatch implements IAnonymousInterceptor, IPointcutLatch {
 	private static final Logger ourLog = LoggerFactory.getLogger(PointcutLatch.class);
-	private static final int DEFAULT_TIMEOUT_SECONDS = 10;
+	private static int ourDefaultTimeoutSeconds = 10;
 	private static final FhirObjectPrinter ourFhirObjectToStringMapper = new FhirObjectPrinter();
 
 	private final String name;
@@ -57,6 +57,10 @@ public class PointcutLatch implements IAnonymousInterceptor, IPointcutLatch {
 
 	public PointcutLatch(String theName) {
 		this.name = theName;
+	}
+
+	public static void setDefaultTimeoutSeconds(int theDefaultTimeoutSeconds) {
+		ourDefaultTimeoutSeconds = theDefaultTimeoutSeconds;
 	}
 
 	@Override
@@ -89,7 +93,7 @@ public class PointcutLatch implements IAnonymousInterceptor, IPointcutLatch {
 
 	@Override
 	public List<HookParams> awaitExpected() throws InterruptedException {
-		return awaitExpectedWithTimeout(DEFAULT_TIMEOUT_SECONDS);
+		return awaitExpectedWithTimeout(ourDefaultTimeoutSeconds);
 	}
 
 	public List<HookParams> awaitExpectedWithTimeout(int timeoutSecond) throws InterruptedException {
