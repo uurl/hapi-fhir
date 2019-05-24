@@ -9,9 +9,9 @@ package ca.uhn.fhir.parser;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,8 +47,6 @@ public abstract class BaseParser implements IParser {
 
 	private static final org.slf4j.Logger ourLog = org.slf4j.LoggerFactory.getLogger(BaseParser.class);
 
-	private static final Set<String> notEncodeForContainedResource = new HashSet<>(Arrays.asList("security", "versionId", "lastUpdated"));
-
 	private ContainedResources myContainedResources;
 	private boolean myEncodeElementsAppliesToChildResourcesOnly;
 	private FhirContext myContext;
@@ -65,7 +63,8 @@ public abstract class BaseParser implements IParser {
 	private boolean mySummaryMode;
 	private boolean mySuppressNarratives;
 	private Set<String> myDontStripVersionsFromReferencesAtPaths;
-	/**
+
+	/*
 	 * Constructor
 	 */
 	public BaseParser(FhirContext theContext, IParserErrorHandler theParserErrorHandler) {
@@ -122,9 +121,13 @@ public abstract class BaseParser implements IParser {
 		}
 	}
 
-	protected Iterable<CompositeChildElement> compositeChildIterator(IBase theCompositeElement, final boolean theContainedResource, final CompositeChildElement theParent, EncodeContext theEncodeContext) {
+	protected Iterable<CompositeChildElement> compositeChildIterator(IBase theCompositeElement,
+																						  final boolean theContainedResource,
+																						  final CompositeChildElement theParent,
+																						  EncodeContext theEncodeContext) {
 
-		BaseRuntimeElementCompositeDefinition<?> elementDef = (BaseRuntimeElementCompositeDefinition<?>) myContext.getElementDefinition(theCompositeElement.getClass());
+		BaseRuntimeElementCompositeDefinition<?> elementDef =
+			(BaseRuntimeElementCompositeDefinition<?>) myContext.getElementDefinition(theCompositeElement.getClass());
 		final List<BaseRuntimeChildDefinition> children = elementDef.getChildrenAndExtension();
 
 		return new Iterable<BaseParser.CompositeChildElement>() {
@@ -137,7 +140,7 @@ public abstract class BaseParser implements IParser {
 					private Boolean myHasNext = null;
 					private CompositeChildElement myNext;
 
-					/**
+					/*
 					 * Constructor
 					 */ {
 						myChildrenIter = children.iterator();
@@ -151,7 +154,7 @@ public abstract class BaseParser implements IParser {
 
 						myNext = null;
 						do {
-							if (myChildrenIter.hasNext() == false) {
+							if (!myChildrenIter.hasNext()) {
 								myHasNext = Boolean.FALSE;
 								return false;
 							}
@@ -163,7 +166,7 @@ public abstract class BaseParser implements IParser {
 							 */
 							if (myNext.getDef().getElementName().equals("id")) {
 								myNext = null;
-							} else if (!myNext.shouldBeEncoded(theContainedResource)) {
+							} else if (!myNext.shouldBeEncoded()) {
 								myNext = null;
 							} else if (isSummaryMode() && !myNext.getDef().isSummary()) {
 								myNext = null;
@@ -412,7 +415,7 @@ public abstract class BaseParser implements IParser {
 			if (childDef == null) {
 				Class<?> nextSuperType = theValue.getClass();
 				while (IBase.class.isAssignableFrom(nextSuperType) && childDef == null) {
-					if (Modifier.isAbstract(nextSuperType.getModifiers()) == false) {
+					if (!Modifier.isAbstract(nextSuperType.getModifiers())) {
 						BaseRuntimeElementDefinition<?> def = myContext.getElementDefinition((Class<? extends IBase>) nextSuperType);
 						Class<?> nextChildType = def.getImplementingClass();
 						childDef = theChild.getChildElementDefinitionByDatatype((Class<? extends IBase>) nextChildType);
@@ -510,7 +513,7 @@ public abstract class BaseParser implements IParser {
 		if (thePreferTypes != null) {
 			ArrayList<Class<? extends IBaseResource>> types = new ArrayList<>();
 			for (Class<? extends IBaseResource> next : thePreferTypes) {
-				if (Modifier.isAbstract(next.getModifiers()) == false) {
+				if (!Modifier.isAbstract(next.getModifiers())) {
 					types.add(next);
 				}
 			}
@@ -579,8 +582,10 @@ public abstract class BaseParser implements IParser {
 	}
 
 	protected boolean isChildContained(BaseRuntimeElementDefinition<?> childDef, boolean theIncludedResource) {
-		return (childDef.getChildType() == ChildTypeEnum.CONTAINED_RESOURCES || childDef.getChildType() == ChildTypeEnum.CONTAINED_RESOURCE_LIST) && getContainedResources().isEmpty() == false
-			&& theIncludedResource == false;
+		return (childDef.getChildType() == ChildTypeEnum.CONTAINED_RESOURCES
+			|| childDef.getChildType() == ChildTypeEnum.CONTAINED_RESOURCE_LIST)
+			&& !getContainedResources().isEmpty()
+			&& !theIncludedResource;
 	}
 
 	@Override
@@ -613,19 +618,19 @@ public abstract class BaseParser implements IParser {
 			return stripVersionsFromReferences;
 		}
 
-		if (myContext.getParserOptions().isStripVersionsFromReferences() == false) {
+		if (!myContext.getParserOptions().isStripVersionsFromReferences()) {
 			return false;
 		}
 
 		Set<String> dontStripVersionsFromReferencesAtPaths = myDontStripVersionsFromReferencesAtPaths;
 		if (dontStripVersionsFromReferencesAtPaths != null) {
-			if (dontStripVersionsFromReferencesAtPaths.isEmpty() == false && theCompositeChildElement.anyPathMatches(dontStripVersionsFromReferencesAtPaths)) {
+			if (!dontStripVersionsFromReferencesAtPaths.isEmpty() && theCompositeChildElement.anyPathMatches(dontStripVersionsFromReferencesAtPaths)) {
 				return false;
 			}
 		}
 
 		dontStripVersionsFromReferencesAtPaths = myContext.getParserOptions().getDontStripVersionsFromReferencesAtPaths();
-		return dontStripVersionsFromReferencesAtPaths.isEmpty() != false || !theCompositeChildElement.anyPathMatches(dontStripVersionsFromReferencesAtPaths);
+		return dontStripVersionsFromReferencesAtPaths.isEmpty() || !theCompositeChildElement.anyPathMatches(dontStripVersionsFromReferencesAtPaths);
 	}
 
 	@Override
@@ -676,7 +681,7 @@ public abstract class BaseParser implements IParser {
 			if (entries != null) {
 				for (IBase nextEntry : entries) {
 
-					/**
+					/*
 					 * If Bundle.entry.fullUrl is populated, set the resource ID to that
 					 */
 					// TODO: should emit a warning and maybe notify the error handler if the resource ID doesn't match the
@@ -689,13 +694,13 @@ public abstract class BaseParser implements IParser {
 						List<IBase> fullUrl = fullUrlChild.getAccessor().getValues(nextEntry);
 						if (fullUrl != null && !fullUrl.isEmpty()) {
 							IPrimitiveType<?> value = (IPrimitiveType<?>) fullUrl.get(0);
-							if (value.isEmpty() == false) {
+							if (!value.isEmpty()) {
 								List<IBase> entryResources = entryDef.getChildByName("resource").getAccessor().getValues(nextEntry);
 								if (entryResources != null && entryResources.size() > 0) {
 									IBaseResource res = (IBaseResource) entryResources.get(0);
 									String versionId = res.getIdElement().getVersionIdPart();
 									res.setId(value.getValueAsString());
-									if (isNotBlank(versionId) && res.getIdElement().hasVersionIdPart() == false) {
+									if (isNotBlank(versionId) && !res.getIdElement().hasVersionIdPart()) {
 										res.setId(res.getIdElement().withVersion(versionId));
 									}
 								}
@@ -902,9 +907,7 @@ public abstract class BaseParser implements IParser {
 			}
 
 			String currentResourceName = theEncodeContext.getResourcePath().get(theEncodeContext.getResourcePath().size() - 1).getName();
-			if (myEncodeElementsAppliesToResourceTypes == null || myEncodeElementsAppliesToResourceTypes.contains(currentResourceName)) {
-				return true;
-			}
+			return myEncodeElementsAppliesToResourceTypes == null || myEncodeElementsAppliesToResourceTypes.contains(currentResourceName);
 		}
 
 		return false;
@@ -944,9 +947,7 @@ public abstract class BaseParser implements IParser {
 			String resourceName = myContext.getResourceDefinition(theResource).getName();
 			if (myDontEncodeElements.stream().anyMatch(t -> t.equalsPath(resourceName + "." + thePath))) {
 				return false;
-			} else if (myDontEncodeElements.stream().anyMatch(t -> t.equalsPath("*." + thePath))) {
-				return false;
-			}
+			} else return myDontEncodeElements.stream().noneMatch(t -> t.equalsPath("*." + thePath));
 		}
 		return true;
 	}
@@ -964,7 +965,7 @@ public abstract class BaseParser implements IParser {
 			b.append(" but this is not a valid type for this element");
 			if (nextChild instanceof RuntimeChildChoiceDefinition) {
 				RuntimeChildChoiceDefinition choice = (RuntimeChildChoiceDefinition) nextChild;
-				b.append(" - Expected one of: " + choice.getValidChildTypes());
+				b.append(" - Expected one of: ").append(choice.getValidChildTypes());
 			}
 			throw new DataFormatException(b.toString());
 		}
@@ -1158,16 +1159,13 @@ public abstract class BaseParser implements IParser {
 			return myParent;
 		}
 
-		public boolean shouldBeEncoded(boolean theContainedResource) {
+		public boolean shouldBeEncoded() {
 			boolean retVal = true;
 			if (myEncodeElements != null) {
 				retVal = checkIfParentShouldBeEncodedAndBuildPath();
 			}
 			if (retVal && myDontEncodeElements != null) {
 				retVal = !checkIfParentShouldNotBeEncodedAndBuildPath();
-			}
-			if (theContainedResource) {
-				retVal = !notEncodeForContainedResource.contains(myDef.getElementName());
 			}
 
 			return retVal;
@@ -1243,7 +1241,6 @@ public abstract class BaseParser implements IParser {
 		}
 	}
 
-
 	/**
 	 * EncodeContext is a shared state object that is passed around the
 	 * encode process
@@ -1266,7 +1263,6 @@ public abstract class BaseParser implements IParser {
 			}
 			return retVal;
 		}
-
 
 		/**
 		 * Add an element at the end of the path
@@ -1293,7 +1289,6 @@ public abstract class BaseParser implements IParser {
 			}
 		}
 
-
 	}
 
 	protected class EncodeContextPathElement {
@@ -1305,7 +1300,6 @@ public abstract class BaseParser implements IParser {
 			myName = theName;
 			myResource = theResource;
 		}
-
 
 		public boolean matches(EncodeContextPathElement theOther) {
 			if (myResource != theOther.isResource()) {
@@ -1328,10 +1322,7 @@ public abstract class BaseParser implements IParser {
 					return true;
 				}
 			}
-			if (myName.equals("*")) {
-				return true;
-			}
-			return false;
+			return myName.equals("*");
 		}
 
 		@Override
